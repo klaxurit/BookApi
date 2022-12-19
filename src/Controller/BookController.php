@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Book;
 use App\Repository\BookRepository;
+use App\Service\VersioningService;
 use App\Repository\AuthorRepository;
 use JMS\Serializer\SerializerInterface;
 use Doctrine\ORM\EntityManagerInterface;
@@ -22,6 +23,15 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 class BookController extends AbstractController
 {
+    /**
+     * Cette route nous permet de récuperer la listes des books
+     *
+     * @param BookRepository $bookRepository
+     * @param SerializerInterface $serializer
+     * @param Request $request
+     * @param TagAwareCacheInterface $cache
+     * @return JsonResponse
+     */
     #[Route('/api/books', name: 'books', methods: ['GET'])]
     public function getAllBooks(
         BookRepository $bookRepository, 
@@ -47,9 +57,11 @@ class BookController extends AbstractController
     }
 
     #[Route('/api/books/{id}', name: 'detailBook', methods: ['GET'])]
-    public function getDetailBook(Book $book, SerializerInterface $serializer): JsonResponse
+    public function getDetailBook(Book $book, SerializerInterface $serializer, VersioningService $versioningService): JsonResponse 
     {
+        $version = $versioningService->getVersion();
         $context = SerializationContext::create()->setGroups(["getBooks"]);
+        $context->setVersion($version);
         $jsonBook = $serializer->serialize($book, 'json', $context);
         return new JsonResponse($jsonBook, Response::HTTP_OK, [], true);
     }
